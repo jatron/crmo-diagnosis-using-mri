@@ -6,4 +6,6 @@ dependencies:
   - numpy
   - scikit-learn
   - pip
+  - pydicom
+  - opencv
   - python=3.6
