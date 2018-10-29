@@ -1,0 +1,9 @@
+name: cs229-project
+channels:
+  - defaults
+dependencies:
+  - matplotlib
+  - numpy
+  - scikit-learn
+  - pip
+  - python=3.6
