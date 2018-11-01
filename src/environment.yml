@@ -5,7 +5,7 @@ dependencies:
   - matplotlib
   - numpy
   - scikit-learn
-  - pip
-  - pydicom
   - opencv
   - python=3.6
+  - pip:
+    - pydicom
