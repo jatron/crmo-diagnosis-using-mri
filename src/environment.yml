@@ -4,8 +4,10 @@ channels:
 dependencies:
   - matplotlib
   - numpy
+  - pandas
   - scikit-learn
   - opencv
   - python=3.6
+  - jupyter
   - pip:
     - pydicom
