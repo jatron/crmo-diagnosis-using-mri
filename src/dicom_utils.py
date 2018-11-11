@@ -1,29 +1,24 @@
 import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.pyplot import imread
 import os
 import png
-import pydicom
-
+from shutil import copy
 
 DICOM_DATA_DIR = '../data/dicom'
 DICOM_IMAGE_DIR = '../data/image'
+TIF_DIR = '../data/horos-export'
+GREEN_ARROWS_DIR = '../data/green-arrows/'
 
-def get_dicom_dataset(fname):
-    """Returns a pydiom.FileDataset object corresponding to a single dicom file"""
-    try:
-        return pydicom.read_file(fname, force=True)
-    except Exception as e:
-        print(e)
-        return None
-
-def data_iterator(data_dir=DICOM_DATA_DIR):
-    """Iterator that walks a directory tree loading dicom files"""
+def data_iterator(func, data_dir=DICOM_DATA_DIR):
+    """Iterator that walks a directory tree calling func on each file path"""
     for root, dirs, files in os.walk(data_dir):
         print("processing %s files" % str(len(files)))
         for fname in files:
             if fname.endswith('.md') or fname == '.DS_Store': # ugly but works
                 continue
             file_path = os.path.join(root, fname)
-            dataset = get_dicom_dataset(file_path)
+            dataset = func(file_path)
             if dataset is None:
                 continue
             yield (file_path, dataset)
@@ -32,7 +27,7 @@ def get_min_shape():
     """Get the minimum dimension of images in our dataset. Maybe useful for
     downsizing later."""
     min_width, min_height = None, None
-    for _, dataset in data_iterator():
+    for _, dataset in data_iterator(get_dicom_dataset):
         try:
             pixels = dataset.pixel_array
             if min_height is None or pixels.shape[0] < min_height:
@@ -46,7 +41,7 @@ def get_min_shape():
 def generate_data():
     num_success, num_failures = 0, 0
     image_index = 1
-    for path, dataset in data_iterator():
+    for path, dataset in data_iterator(get_dicom_dataset):
         try:
             pixels = dataset.pixel_array
         except Exception as e:
@@ -65,5 +60,16 @@ def generate_data():
     print('num success: %s' % str(num_success))
     print('num failures: %s' % str(num_failures))
 
+def generate_hand_labeled_dataset():
+    i = 0
+    total = 0
+    for path, image in data_iterator(imread, data_dir=TIF_DIR):
+        if len(image.shape) > 2:
+            copy(path, GREEN_ARROWS_DIR)
+            i += 1
+        total += 1
+    print("found %s labeled images!" % str(i))
+    print("found %s total images!" % str(total))
+
 if __name__ == '__main__':
-    generate_data()
+    generate_hand_labeled_dataset()
