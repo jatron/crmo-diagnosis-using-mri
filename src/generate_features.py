@@ -31,15 +31,6 @@ def hist_features(img_path, img_post=None, show_image=False):
 def baseline_hist_diff(img_before, img_after, img_post=None):
     return hist_features(img_before, img_post=img_post) - hist_features(img_after, img_post=img_post)
 
-def print_incorrect_images(model, data):
-    input_csv = pd.read_csv("data_binary.csv")
-    for index, row in input_csv.iterrows():
-        patient_id = str(row["patient_id"])
-        file_1 = os.path.join(dir_name, patient_id, '.'.join((row["scan_1"], FILE_EXTENSION)))
-        file_2 = os.path.join(dir_name, patient_id, '.'.join((row["scan_2"], FILE_EXTENSION)))
-        if not (os.path.isfile(file_1) and os.path.isfile(file_2)):
-            continue
-
 if __name__ == '__main__':
     input_csv = pd.read_csv("data_binary.csv")
     FILE_EXTENSION = "tif"

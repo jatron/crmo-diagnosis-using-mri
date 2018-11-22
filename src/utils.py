@@ -12,7 +12,6 @@ def show_incorrect_images(model, x_test, y_test):
     """imshow before and after images for images where model predicted
     incorrectly. x_test should have before_path and after_path columns which
     contain directory paths to images"""
-    # input_csv = pd.read_csv("data_binary.csv")
     before_path = x_test['before_path']
     after_path = x_test['after_path']
     x_test = x_test.drop('after_path', axis=1).drop('before_path', axis=1)
