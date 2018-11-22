@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 
 import matplotlib
@@ -5,6 +6,28 @@ matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
 
 from sklearn import model_selection
+
+
+def show_incorrect_images(model, x_test, y_test):
+    """imshow before and after images for images where model predicted
+    incorrectly. x_test should have before_path and after_path columns which
+    contain directory paths to images"""
+    # input_csv = pd.read_csv("data_binary.csv")
+    before_path = x_test['before_path']
+    after_path = x_test['after_path']
+    x_test = x_test.drop('after_path', axis=1).drop('before_path', axis=1)
+    incorrect_indices = np.logical_not(model.predict(x_test) == y_test)
+    incorrect_before = before_path[incorrect_indices]
+    incorrect_after = after_path[incorrect_indices]
+    incorrect_true_labels = y_test[incorrect_indices]
+    for before_img, after_img, true_label in zip(incorrect_before, incorrect_after, incorrect_true_labels):
+        print("Model predicted incorrectly. True label is %s" % true_label)
+        print("Before: %s" % before_img)
+        plt.imshow(cv2.imread(before_img, 0))
+        plt.show()
+        print("After: %s" % after_img)
+        plt.imshow(cv2.imread(after_img, 0))
+        plt.show()
 
 def generate_validation_curve(estimator, X, y, param_name, param_range, cv,
     scoring, n_jobs, title, xlabel):
