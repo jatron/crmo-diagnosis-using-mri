@@ -17,10 +17,13 @@ def binary_threshold(img):
     ret, threshold = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
     return threshold
 
-def hist_features(img_path, img_post=None):
+def hist_features(img_path, img_post=None, show_image=False):
     img = cv2.imread(img_path, 0) # 0 means grayscale
     if img_post is not None:
         img = img_post(img)
+        if show_image:
+            plt.imshow(img)
+            plt.show()
     # Based on my research 256 is the value to use for full range
     hist = cv2.calcHist([img],[0],None,[256],[0,256])
     return hist.flatten()
