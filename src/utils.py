@@ -45,6 +45,10 @@ def plot_confusion_matrix(y_test,y_pred):
     sn.set(font_scale=1.4)#for label size
     sn.heatmap(df_cm, annot=True,annot_kws={"size": 16})
 
+#def plot_roc_multiclass():
+
+#def plot_roc_binary():
+
 def do_CV(X,y, model, multi_class=True):
     # Change to 2-class
     if not multi_class:
@@ -76,7 +80,13 @@ def do_CV(X,y, model, multi_class=True):
     print("The model is trained on the full development set.")
     print("The scores are computed on the full evaluation set.")
     print()
-    y_true, y_pred = y_test, model.predict(X_test)
-    print(classification_report(y_true, y_pred))
-    plot_confusion_matrix(y_true, y_pred)
+    y_pred = model.predict(X_test)
+    print(classification_report(y_test, y_pred))
+    plot_confusion_matrix(y_test, y_pred)
+    print(roc_auc_score(y_test, y_pred)
     print()
+
+    print("This is the classification report for the training set:")
+    y_train_pred = model.predict(X_train)
+    print(classification_report(y_true, y_train_pred))
+    plot_confusion_matrix(y_train, y_train_pred)
