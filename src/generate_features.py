@@ -5,6 +5,7 @@ import os
 import glob
 import re
 import pickle
+import sys
 from matplotlib import pyplot as plt
 from sklearn import datasets, neighbors, linear_model, model_selection, svm
 from sklearn.metrics import confusion_matrix 
@@ -32,7 +33,18 @@ def baseline_hist_diff(img_before, img_after, img_post=None):
     return hist_features(img_before, img_post=img_post) - hist_features(img_after, img_post=img_post)
 
 if __name__ == '__main__':
-    input_csv = pd.read_csv("data_binary.csv")
+    label_type = 'binary'
+    input_csv_fname = 'data_binary.csv'
+    if len(sys.argv) > 1 and sys.argv[1] == 'multiclass':
+        label_type = 'multiclass'
+        input_csv_fname = 'data.csv'
+    if len(sys.argv) > 2 and sys.argv[2] == 'include_paths':
+        include_paths = True
+    else:
+        include_paths = False
+
+
+    input_csv = pd.read_csv(input_csv_fname)
     FILE_EXTENSION = "tif"
     dir_name = "legs_folder/"
     img_hist = []
@@ -60,8 +72,10 @@ if __name__ == '__main__':
     column_names = ["hist" + str(i) for i in range(256)]
     df = pd.DataFrame(img_hist, columns=column_names, index=patient_ids)
     df["y"] = Y
-    # df["before_path"] = before_paths
-    # df["after_path"] = after_paths
+
+    if include_paths:
+        df["before_path"] = before_paths
+        df["after_path"] = after_paths
 
     data = df.loc[:, (df != 0).any(axis=0)]
 
@@ -71,8 +85,8 @@ if __name__ == '__main__':
     test_data = data.loc[test_patient_ids]
     train_data = data.loc[data.index.difference(test_patient_ids)]
 
-    pickle.dump(train_data, open("train_data_binary_threshold.pkl", "wb") )
-    pickle.dump(test_data, open("test_data_binary_threshold.pkl", "wb") )
+    pickle.dump(train_data, open("train_data_%s_threshold.pkl" % label_type, "wb") )
+    pickle.dump(test_data, open("test_data_%s_threshold.pkl" % label_type, "wb") )
 
     y = train_data["y"]
     X = train_data.drop('y', axis=1)
