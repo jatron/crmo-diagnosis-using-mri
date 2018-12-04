@@ -9,5 +9,6 @@ dependencies:
   - opencv
   - python=3.6
   - jupyter
+  - seaborn
   - pip:
     - pydicom

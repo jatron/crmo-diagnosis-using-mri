@@ -1,0 +1,104 @@
+import cv2
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib import pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn.cluster import KMeans
+
+def detect_and_draw_orb(path, draw_img=True):
+    orb = cv2.ORB_create()
+    img = cv2.imread(path,0)
+    # Initiate ORB detector
+    # find the keypoints with ORB
+    kp = orb.detect(img,None)
+    # compute the descriptors with ORB
+    kp, des = orb.compute(img, kp)
+    # draw only keypoints location,not size and orientation
+    kps_img = cv2.drawKeypoints(img, kp, None, color=(0,255,0), flags=0)
+    if draw_img:
+        plt.imshow(kps_img), plt.show()
+    return kp, des, kps_img
+
+def detect_and_draw_sift(path, draw_img=False):
+    sift = cv2.xfeatures2d.SIFT_create()
+    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = cv2.imread(path, 0)
+    (kp, des) = sift.detectAndCompute(img, None)
+    kps_img = cv2.drawKeypoints(img, kp, None, color=(0,255,0), flags= cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    if draw_img:
+        plt.imshow(img), plt.show()
+    return kp, des, kps_img
+
+def detect_and_draw(path, feature_type='orb', draw_img=True):
+    if feature_type == 'orb':
+        return detect_and_draw_orb(path, draw_img)
+    elif feature_type == 'sift':
+        return detect_and_draw_sift(path, draw_img)
+    elif feature_type == 'surf':
+        pass
+
+def extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num_clusters):
+    data = []
+    indices = []
+    for before_path, after_path, label in zip(before_paths, after_paths, labels):
+        feature_vec = np.zeros(2 * num_clusters)
+        before_kp, before_des, before_img = detect_and_draw_orb(before_path, draw_img=False)
+        after_kp, after_des, after_img = detect_and_draw_orb(after_path, draw_img=False)
+        before_clusters = kmeans_clusters.predict(before_des)
+        after_clusters = kmeans_clusters.predict(after_des)
+        for c in before_clusters:
+            feature_vec[c] += 1
+        for c in after_clusters:
+            feature_vec[num_clusters + c] += 1
+        data.append(feature_vec)
+        _, patient_id, before_fname = before_path.split('/')
+        _, _, after_fname = after_path.split('/')
+        indices.append('/'.join((patient_id, before_fname, after_fname)))
+    data = np.array(data)
+    X = pd.DataFrame(data, index=indices)
+    y = labels
+    return X, y
+
+def vbow_kmeans(orb_features, num_clusters, before_paths, after_paths, labels, multi_class=False, write_kmeans=False):
+    kmeans_clusters = KMeans(n_clusters=num_clusters).fit(orb_features)
+    data = []
+    X, y = extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num_clusters)
+    lpo = LeavePOut(3)
+    params = {
+        'C': [0.1, 1, 10, 100],
+        'gamma': [.0001, 0.001, 0.01, 0.1, 1],
+    }
+    svm_clf = GridSearchCV(SVC(), cv=lpo, param_grid=params)
+    do_CV(X, y, svm_clf, multi_class=multi_class)
+    if write_kmeans:
+        class_str = 'multiclass' if multi_class else 'binary'
+        pickle.dump(kmeans_clusters, open("./vbow/orb-{}-{}.pkl".format(str(num_clusters), class_str), "wb"))
+    
+def get_all_orb_features(before_paths, after_paths):
+    all_orb_features = pd.DataFrame()
+    for before_path, after_path in zip(before_paths, after_paths):
+        before_kp, before_des, before_img = detect_and_draw_orb(before_path)
+        after_kp, after_des, after_img = detect_and_draw_orb(after_path)
+        all_orb_features = all_orb_features.append(pd.DataFrame(before_des))
+        all_orb_features = all_orb_features.append(pd.DataFrame(after_des))
+    return all_orb_features
+
+def get_all_features(before_paths, after_paths, feature_type='orb'):
+    """This is a generic version of get_all_orb_features"""
+    all_features = pd.DataFrame()
+    for before_path, after_path in zip(before_paths, after_paths):
+        before_kp, before_des, before_img = detect_and_draw(before_path, feature_type=feature_type, draw_img=False)
+        after_kp, after_des, after_img = detect_and_draw(after_path, feature_type=feature_type, draw_img=False)
+        all_features = all_features.append(pd.DataFrame(before_des))
+        all_features = all_features.append(pd.DataFrame(after_des))
+    return all_features
+
+def get_features_clusters_and_vbow_data(before_paths, after_paths, labels, num_clusters=50, feature_type='orb'):
+    raw_image_features = get_all_features(before_paths, after_paths, feature_type)
+    kmeans_clusters = KMeans(n_clusters=num_clusters).fit(raw_image_features)
+    X, y = extract_vbow_dataset(before_paths, after_paths, labels, kmeans_clusters, num_clusters)
+    return (raw_image_features, kmeans_clusters, X, y)
+
+if __name__ == '__main__':
+    pass
